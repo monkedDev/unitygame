@@ -1,19 +1,26 @@
-# Unity generated
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-[Ll]ogs/
-[Uu]ser[Ss]ettings/
-
-# Visual Studio
-.vs/
-*.csproj
+```
+# Unity-specific ignores
+*.meta
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+*.unityproj
 *.sln
-*.suo
+*.csproj
 *.user
-
-# OS generated
-.DS_Store
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.cache
+*.asmdef
+*.rsp
+*.pdb
+*.mdb
+*.pidb.meta
+*.meta.meta
+*.DS_Store
 Thumbs.db
+```

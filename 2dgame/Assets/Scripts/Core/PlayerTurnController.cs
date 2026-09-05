@@ -2,141 +2,100 @@ using UnityEngine;
 using Core;
 
 /// <summary>
-/// Контроллер хода игрока.
-/// Обрабатывает ввод с клавиатуры (WASD или стрелки) только во время хода игрока.
-/// 
-/// Примечание для перехода с Godot:
-/// В Godot вы могли использовать _input(event) или Input.is_action_pressed("ui_up").
-/// В Unity мы используем Input.GetKey() в методе Update().
-/// Update() в Unity аналогичен _process(delta) в Godot.
+/// Контроллер хода игрока. Обрабатывает ввод и инициирует движение.
+/// В Godot это был бы скрипт на игроке с _input(event) методом.
 /// </summary>
 public class PlayerTurnController : MonoBehaviour
 {
+    [Header("Настройки")]
+    [Tooltip("Ссылка на компонент PlayerMovement для выполнения движения")]
+    [SerializeField] private PlayerMovement playerMovement;
+    
     /// <summary>
-    /// Флаг, предотвращающий множественные нажатия за один ход.
-    /// После первого нажатия игрок должен дождаться следующего хода.
+    /// Обновление каждый кадр.
+    /// В Godot это аналог _input(event) или _unhandled_input(event).
     /// </summary>
-    private bool _hasMovedThisTurn = false;
-
     private void Update()
     {
         // ВАЖНО: Обрабатываем ввод ТОЛЬКО если сейчас ход игрока
-        // Это ключевое отличие от real-time игр где ввод обрабатывается всегда
-        if (TurnManager.Instance.CurrentState != TurnManager.GameState.PlayerTurn)
+        if (TurnManager.Instance.CurrentState != GameState.PlayerTurn)
         {
             return;
         }
-
-        // Если игрок уже сделал ход в этом раунде, игнорируем дальнейший ввод
-        if (_hasMovedThisTurn)
-        {
-            return;
-        }
-
-        // Проверяем нажатия клавиш движения
-        // WASD и стрелки - стандартные управления в Unity (аналог ui_up/ui_down/ui_left/ui_right в Godot)
-        Vector3Int direction = Vector3Int.zero;
-        string directionName = "";
-
-        // Вверх (W или Стрелка вверх)
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            direction = new Vector3Int(0, 1, 0);
-            directionName = "Вверх";
-        }
-        // Вниз (S или Стрелка вниз)
-        else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            direction = new Vector3Int(0, -1, 0);
-            directionName = "Вниз";
-        }
-        // Влево (A или Стрелка влево)
-        else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            direction = new Vector3Int(-1, 0, 0);
-            directionName = "Влево";
-        }
-        // Вправо (D или Стрелка вправо)
-        else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            direction = new Vector3Int(1, 0, 0);
-            directionName = "Вправо";
-        }
-
-        // Если было нажато направление, обрабатываем движение
+        
+        // Если игрок уже движется, игнорируем ввод (как в пошаговых играх)
+        // Это предотвращает "запоминание" нескольких нажатий
+        
+        // Получаем ввод (WASD или стрелки)
+        // В Godot: Input.get_action_strength("ui_up") и т.д.
+        Vector3Int direction = GetInputDirection();
+        
         if (direction != Vector3Int.zero)
         {
-            HandleMovement(direction, directionName);
+            string directionName = GetDirectionName(direction);
+            Debug.Log($"Движение: {directionName}");
+            
+            // Если есть компонент PlayerMovement, используем его для движения
+            if (playerMovement != null)
+            {
+                playerMovement.TryMove(direction);
+            }
+            
+            // Завершаем ход игрока после ввода
+            // Это переключит состояние на EnemyTurn
+            TurnManager.Instance.EndTurn();
         }
     }
-
+    
     /// <summary>
-    /// Обрабатывает попытку движения игрока.
+    /// Преобразует нажатия клавиш в направление сетки.
+    /// Возвращает Vector3Int.zero, если ничего не нажато.
     /// </summary>
-    /// <param name="direction">Направление движения как Vector3Int</param>
-    /// <param name="directionName">Название направления для логирования</param>
-    /// <remarks>
-    /// В текущей реализации только логируем направление и завершаем ход.
-    /// В будущем здесь будет:
-    /// 1. Проверка проходимости ячейки через GridManager.IsCellWalkable()
-    /// 2. Перемещение игрока
-    /// 3. Обновление позиции
-    /// </remarks>
-    private void HandleMovement(Vector3Int direction, string directionName)
+    private Vector3Int GetInputDirection()
     {
-        // Выводим отладочное сообщение о направлении движения
-        Debug.Log($"Движение: {directionName}");
-
-        // TODO: Реализовать фактическое перемещение игрока
-        // Пример будущей логики:
-        // 1. Получить текущую позицию игрока в ячейках
-        // Vector3Int currentCell = GridManager.Instance.WorldToCell(transform.position);
-        // 
-        // 2. Вычислить новую позицию
-        // Vector3Int targetCell = currentCell + direction;
-        // 
-        // 3. Проверить проходимость
-        // if (GridManager.Instance.IsCellWalkable(targetCell))
-        // {
-        //     Vector3 worldPos = GridManager.Instance.CellToWorld(targetCell);
-        //     transform.position = worldPos;
-        // }
-
-        // Помечаем что игрок сделал ход
-        _hasMovedThisTurn = true;
-
-        // Завершаем ход игрока, передавая управление противнику
-        TurnManager.Instance.EndTurn();
+        // В Godot: Input.is_action_pressed("ui_right") и т.д.
+        // В Unity используем Input.GetKey() или Input.GetAxis()
+        
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+            return Vector3Int.up;      // Вверх (0, 1, 0)
+        
+        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+            return Vector3Int.down;    // Вниз (0, -1, 0)
+        
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+            return Vector3Int.left;    // Влево (-1, 0, 0)
+        
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+            return Vector3Int.right;   // Вправо (1, 0, 0)
+        
+        return Vector3Int.zero;
     }
-
+    
     /// <summary>
-    /// Сбрасывает флаг движения при получении события смены хода.
-    /// Подписываемся на событие TurnManager.OnTurnChanged.
+    /// Возвращает читаемое название направления для отладки.
     /// </summary>
-    /// <remarks>
-    /// В Godot вы бы подключились к сигналу через Connect("turn_changed", this, "_on_turn_changed").
-    /// В Unity используем += для подписки на event.
-    /// </remarks>
-    private void OnEnable()
+    private string GetDirectionName(Vector3Int direction)
     {
-        TurnManager.Instance.OnTurnChanged += OnTurnChanged;
+        if (direction == Vector3Int.up) return "Вверх";
+        if (direction == Vector3Int.down) return "Вниз";
+        if (direction == Vector3Int.left) return "Влево";
+        if (direction == Vector3Int.right) return "Вправо";
+        return "Нет направления";
     }
-
-    private void OnDisable()
-    {
-        TurnManager.Instance.OnTurnChanged -= OnTurnChanged;
-    }
-
+    
     /// <summary>
-    /// Обработчик события смены хода.
-    /// Сбрасывает флаг _hasMovedThisTurn когда наступает новый ход игрока.
+    /// Метод для назначения PlayerMovement из инспектора или кода.
+    /// Вызывается автоматически, если не назначен вручную.
     /// </summary>
-    private void OnTurnChanged()
+    private void Awake()
     {
-        // Разрешаем движение снова если наступил ход игрока
-        if (TurnManager.Instance.CurrentState == TurnManager.GameState.PlayerTurn)
+        if (playerMovement == null)
         {
-            _hasMovedThisTurn = false;
+            playerMovement = GetComponent<PlayerMovement>();
+            if (playerMovement == null)
+            {
+                Debug.LogWarning("PlayerMovement не найден на этом объекте!");
+            }
         }
     }
 }
