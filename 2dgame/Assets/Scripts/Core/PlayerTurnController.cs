@@ -98,4 +98,12 @@ public class PlayerTurnController : MonoBehaviour
             }
         }
     }
+    
+    /// <summary>
+    /// Публичный метод для установки PlayerMovement из кода (используется Editor-скриптом).
+    /// </summary>
+    public void SetPlayerMovement(PlayerMovement movement)
+    {
+        playerMovement = movement;
+    }
 }

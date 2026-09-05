@@ -45,12 +45,20 @@ public class PlayerMovement : MonoBehaviour
         // Если Tilemap не назначен, пытаемся найти его в сцене
         if (tilemap == null)
         {
-            tilemap = FindObjectOfType<Tilemap>();
+            tilemap = FindFirstObjectByType<Tilemap>();
             if (tilemap == null)
             {
                 Debug.LogWarning("Tilemap не найден! Проверьте настройку сцены.");
             }
         }
+    }
+
+    /// <summary>
+    /// Публичный метод для установки Tilemap из кода (используется Editor-скриптом).
+    /// </summary>
+    public void SetTilemap(Tilemap newTilemap)
+    {
+        tilemap = newTilemap;
     }
 
     /// <summary>
